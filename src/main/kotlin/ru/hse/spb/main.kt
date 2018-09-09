@@ -54,7 +54,9 @@ fun solve(n: Int, vectors: ArrayList<Vector>): Pair<Int, Int> {
     }
 
     angles.sort()
-    return Pair(angles.last().v1.num, angles.last().v2.num)
+    val n1 = angles.last().v1.num
+    val n2 = angles.last().v2.num
+    return if (n1 > n2) Pair(n2, n1) else Pair(n1, n2)
 }
 
 fun main(args: Array<String>) {
