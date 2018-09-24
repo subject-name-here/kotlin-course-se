@@ -7,7 +7,7 @@ class TestSource {
     @Test
     fun test1() {
         val n = 4
-        val vs: ArrayList<Vector> = ArrayList()
+        val vs = ArrayList<Vector>()
         vs.add(Vector(-1, 0, 1))
         vs.add(Vector(0, -1, 2))
         vs.add(Vector(1, 0, 3))
@@ -18,7 +18,7 @@ class TestSource {
     @Test
     fun test2() {
         val n = 6
-        val vs: ArrayList<Vector> = ArrayList()
+        val vs = ArrayList<Vector>()
         vs.add(Vector(-1, 0, 1))
         vs.add(Vector(0, -1, 2))
         vs.add(Vector(1, 0, 3))

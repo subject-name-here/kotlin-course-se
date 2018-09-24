@@ -1,12 +1,13 @@
 package ru.hse.spb
 
 import java.util.*
+import kotlin.NoSuchElementException
 import kotlin.collections.ArrayList
 import kotlin.math.sign
 
-fun pseudoscalarProduct(v1: Vector, v2: Vector) = v1.x * v2.y - v1.y * v2.x
+private fun pseudoscalarProduct(v1: Vector, v2: Vector) = v1.x * v2.y - v1.y * v2.x
 
-fun scalarProduct(v1: Vector, v2: Vector) = v1.x * v2.x + v1.y * v2.y
+private fun scalarProduct(v1: Vector, v2: Vector) = v1.x * v2.x + v1.y * v2.y
 
 class Vector(val x: Int, val y: Int, val num: Int) : Comparable<Vector> {
     override fun compareTo(other: Vector): Int {
@@ -37,12 +38,12 @@ class Angle(val v1: Vector, val v2: Vector) : Comparable<Angle> {
         val s2 = scalarProduct(other.v1, other.v2).toLong()
         val p2 = -pseudoscalarProduct(other.v1, other.v2).toLong()
 
-        return (s1 * p2 - s2 * p1).sign
+        return (s1 * p2 - s2 * p1).toInt()
     }
 }
 
-fun solve(n: Int, vectors: ArrayList<Vector>): Pair<Int, Int> {
-    vectors.sort()
+fun solve(n: Int, srcVectors: List<Vector>): Pair<Int, Int> {
+    val vectors = srcVectors.sorted()
 
     val angles : ArrayList<Angle> = ArrayList()
     for (i in 0 until n) {
@@ -54,9 +55,16 @@ fun solve(n: Int, vectors: ArrayList<Vector>): Pair<Int, Int> {
     }
 
     angles.sort()
-    val n1 = angles.last().v1.num
-    val n2 = angles.last().v2.num
-    return if (n1 > n2) Pair(n2, n1) else Pair(n1, n2)
+    val maxAngle = angles.max()
+    if (maxAngle != null) {
+        val n1 = maxAngle.v1.num
+        val n2 = maxAngle.v2.num
+        return if (n1 > n2) Pair(n2, n1) else Pair(n1, n2)
+    } else {
+        // This will never happen.
+        throw NoSuchElementException("List of angles is empty.")
+    }
+
 }
 
 fun main(args: Array<String>) {
@@ -64,10 +72,10 @@ fun main(args: Array<String>) {
     val n = input.nextInt()
 
     val vectors: ArrayList<Vector> = ArrayList()
-    for (i in 0 until n) {
+    for (i in 1..n) {
         val x = input.nextInt()
         val y = input.nextInt()
-        vectors.add(Vector(x, y, i + 1))
+        vectors.add(Vector(x, y, i))
     }
 
     val ans = solve(n, vectors)
