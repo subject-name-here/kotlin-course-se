@@ -1,13 +1,15 @@
 package ru.hse.spb
 
-fun getGreeting(): String {
-    val words = mutableListOf<String>()
-    words.add("Hello,")
-    words.add("world!")
-
-    return words.joinToString(separator = " ")
-}
+import org.antlr.v4.runtime.BufferedTokenStream
+import org.antlr.v4.runtime.CharStreams
+import ru.hse.spb.parser.ExpLexer
+import ru.hse.spb.parser.ExpParser
 
 fun main(args: Array<String>) {
-    println(getGreeting())
+    val filename = args[0]
+    val expLexer = ExpLexer(CharStreams.fromFileName(filename))
+    val parser = ExpParser(BufferedTokenStream(expLexer))
+    val root = parser.file()
+    val visitor = MyTreeVisitor(System.out)
+    visitor.visitFile(root)
 }
