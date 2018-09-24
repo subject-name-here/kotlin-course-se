@@ -71,7 +71,7 @@ fun main(args: Array<String>) {
     val input = Scanner(System.`in`)
     val n = input.nextInt()
 
-    val vectors: ArrayList<Vector> = ArrayList()
+    val vectors = ArrayList<Vector>()
     for (i in 1..n) {
         val x = input.nextInt()
         val y = input.nextInt()
