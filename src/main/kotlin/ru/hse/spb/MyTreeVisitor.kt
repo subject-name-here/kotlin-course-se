@@ -12,13 +12,16 @@ class MyTreeVisitor(private val outStream: PrintStream) : ExpBaseVisitor<Void>()
 
     override fun visitFile(ctx: ExpParser.FileContext?): Void? {
         val main = ctx?.block()
-        val scope = Scope()
-        scope.funcScope["println"] = Func(ArrayList()) { args: List<ExpParser.ExpressionContext>, outerScope: Scope ->
+        val scope = Scope(null)
+        scope.addFunction("println", Func { args: List<ExpParser.ExpressionContext>, outerScope: Scope ->
+            val list = ArrayList<Int>()
             for (arg in args) {
-                outStream.println(visitExpression(arg, outerScope))
+                list.add(visitExpression(arg, outerScope))
             }
+            outStream.println(list.asSequence().joinToString(" "))
+
             null
-        }
+        })
 
         if (main != null)
             visitBlock(main, scope)
@@ -42,20 +45,14 @@ class MyTreeVisitor(private val outStream: PrintStream) : ExpBaseVisitor<Void>()
     }
 
     fun visitStatement(ctx: ExpParser.StatementContext, scope: Scope): Int? {
-        if (ctx.assignment() != null) {
-            visitAssignment(ctx.assignment(), scope)
-        } else if (ctx.expression() != null) {
-            visitExpression(ctx.expression(), scope)
-        } else if (ctx.function() != null) {
-            visitFunction(ctx.function(), scope)
-        } else if (ctx.ifExpr() != null) {
-            return visitIfExpr(ctx.ifExpr(), scope)
-        } else if (ctx.returnExpr() != null) {
-            return visitReturnExpr(ctx.returnExpr(), scope)
-        } else if (ctx.variable() != null) {
-            visitVariable(ctx.variable(), scope)
-        } else if (ctx.whileExpr() != null) {
-            visitWhileExpr(ctx.whileExpr(), scope)
+        when {
+            ctx.assignment() != null -> visitAssignment(ctx.assignment(), scope)
+            ctx.expression() != null -> visitExpression(ctx.expression(), scope)
+            ctx.function() != null -> visitFunction(ctx.function(), scope)
+            ctx.ifExpr() != null -> return visitIfExpr(ctx.ifExpr(), scope)
+            ctx.returnExpr() != null -> return visitReturnExpr(ctx.returnExpr(), scope)
+            ctx.variable() != null -> visitVariable(ctx.variable(), scope)
+            ctx.whileExpr() != null -> visitWhileExpr(ctx.whileExpr(), scope)
         }
 
         return null
@@ -63,9 +60,6 @@ class MyTreeVisitor(private val outStream: PrintStream) : ExpBaseVisitor<Void>()
 
     fun visitFunction(ctx: ExpParser.FunctionContext, scope: Scope) {
         val name = ctx.Identifier().text
-        if (name in scope.funcScope) {
-            throw MyTreeVisitorException("Line " + ctx.Identifier().symbol.line + ": function already defined.")
-        }
 
         val parameters = ArrayList<String>()
         for (x in ctx.parameterNames().Identifier()) {
@@ -73,7 +67,6 @@ class MyTreeVisitor(private val outStream: PrintStream) : ExpBaseVisitor<Void>()
         }
 
         val body = ctx.blockWithBraces()
-
         val lambda = { args: List<ExpParser.ExpressionContext>, outerScope: Scope ->
             if (args.size != parameters.size) {
                 throw MyTreeVisitorException("Line " + ctx.Identifier().symbol.line + ": not enough parameters.")
@@ -81,42 +74,40 @@ class MyTreeVisitor(private val outStream: PrintStream) : ExpBaseVisitor<Void>()
 
             val innerScope = Scope(outerScope)
             for (i in 0 until parameters.size) {
-                innerScope.varScope[parameters[i]] = visitExpression(args[i], outerScope)
+                innerScope.addVariable(parameters[i], visitExpression(args[i], outerScope))
             }
 
             visitBlockWithBraces(body, innerScope)
         }
-        scope.funcScope[name] = Func(parameters, lambda)
+        if (!scope.addFunction(name, Func(lambda))) {
+            throw MyTreeVisitorException("Line " + ctx.Identifier().symbol.line + ": function already defined.")
+        }
     }
 
     fun visitFunctionCall(ctx: ExpParser.FunctionCallContext, scope: Scope): Int {
         val name = ctx.Identifier().text
-        if (name !in scope.funcScope) {
-            throw MyTreeVisitorException("Line " + ctx.Identifier().symbol.line + ": function is not defined.")
-        }
-        val f = scope.funcScope[name]
+        val f = scope.getFunction(name) ?: throw MyTreeVisitorException("Line " + ctx.Identifier().symbol.line + ": function is not defined.")
 
         val args = ctx.arguments().expression()
-        return f?.call(args, scope) ?: 0
+        return f.call(args, scope) ?: 0
     }
 
     fun visitVariable(ctx: ExpParser.VariableContext, scope: Scope) {
         val name = ctx.Identifier().text
-        if (name in scope.varScope) {
+        val value = if (ctx.expression() == null) null else visitExpression(ctx.expression(), scope)
+
+        if (!scope.addVariable(name, value)) {
             throw MyTreeVisitorException("Line " + ctx.Identifier().symbol.line + ": variable already defined.")
         }
-
-        scope.varScope[name] = if (ctx.expression() == null) null else visitExpression(ctx.expression(), scope)
     }
 
     fun visitAssignment(ctx: ExpParser.AssignmentContext, scope: Scope) {
         val name = ctx.Identifier().text
-        if (name !in scope.varScope) {
+        val value = visitExpression(ctx.expression(), scope)
+
+        if (!scope.setVariable(name, value)) {
             throw MyTreeVisitorException("Line " + ctx.Identifier().symbol.line + ": variable is not defined.")
         }
-
-        val value = visitExpression(ctx.expression(), scope)
-        scope.varScope[name] = value
     }
 
     fun visitWhileExpr(ctx: ExpParser.WhileExprContext, scope: Scope): Int? {
@@ -133,7 +124,11 @@ class MyTreeVisitor(private val outStream: PrintStream) : ExpBaseVisitor<Void>()
     fun visitIfExpr(ctx: ExpParser.IfExprContext, scope: Scope): Int? {
         val condResult = visitExpression(ctx.expression(), scope)
 
-        return visitBlockWithBraces(if (condResult != 0) ctx.trueBlock else ctx.falseBlock, scope)
+        return when {
+            condResult != 0 -> visitBlockWithBraces(ctx.trueBlock, scope)
+            ctx.falseBlock != null -> visitBlockWithBraces(ctx.falseBlock, scope)
+            else -> null
+        }
     }
 
     fun visitReturnExpr(ctx: ExpParser.ReturnExprContext, scope: Scope): Int? {
@@ -172,7 +167,7 @@ class MyTreeVisitor(private val outStream: PrintStream) : ExpBaseVisitor<Void>()
     fun visitAtomExpression(ctx: ExpParser.AtomExpressionContext, scope: Scope): Int {
         if (ctx.Identifier() != null) {
             val name = ctx.Identifier().text
-            val value = scope.varScope[name]
+            val value = scope.getVariable(name)
 
             if (value != null) {
                 return value

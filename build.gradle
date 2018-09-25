@@ -28,6 +28,12 @@ dependencies {
     antlr "org.antlr:antlr4:4.7"
 }
 
+sourceSets {
+    generated{
+        java.srcDir "${buildDir}/generated-src/antlr/main/"
+    }
+}
+
 compileKotlin {
     kotlinOptions.jvmTarget = "1.8"
 }
