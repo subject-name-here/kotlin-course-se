@@ -173,4 +173,114 @@ class TestException {
 
         runProgram(program)
     }
+
+    @Test(expected = MyTreeVisitorException::class)
+    fun testFunctionError3() {
+        val program = """
+            fun foo() {
+                println(22)
+            }
+            var y = foo + 2
+        """.trimIndent()
+
+        runProgram(program)
+    }
+
+
+    @Test(expected = LexerException::class)
+    fun testLexerError1() {
+        val program = """
+            var a = 5 ~ 2
+        """.trimIndent()
+
+        runProgram(program)
+    }
+
+    @Test(expected = LexerException::class)
+    fun testLexerError2() {
+        val program = """
+            var Ж = 5
+        """.trimIndent()
+
+        runProgram(program)
+    }
+
+    @Test(expected = LexerException::class)
+    fun testLexerError3() {
+        val program = """
+            var x := 5
+        """.trimIndent()
+
+        runProgram(program)
+    }
+
+    @Test(expected = ParserException::class)
+    fun testParserError1() {
+        val program = """
+            var x = 2
+            x <> 5
+        """.trimIndent()
+
+        runProgram(program)
+    }
+
+    @Test(expected = ParserException::class)
+    fun testParserError2() {
+        val program = """
+            var if = 5
+        """.trimIndent()
+
+        runProgram(program)
+    }
+
+    @Test(expected = ParserException::class)
+    fun testParserError3() {
+        val program = """
+            foo() {
+                println(5)
+            }
+        """.trimIndent()
+
+        runProgram(program)
+    }
+
+    @Test(expected = ParserException::class)
+    fun testParserError4() {
+        val program = """
+            var x = ((2 + 2) || (2 - 2)
+        """.trimIndent()
+
+        runProgram(program)
+    }
+
+    @Test(expected = ParserException::class)
+    fun testParserError5() {
+        val program = """
+            var x = 2
+            x *= 3
+        """.trimIndent()
+
+        runProgram(program)
+    }
+
+    @Test(expected = ParserException::class)
+    fun testParserError6() {
+        val program = """
+            fun foo() {
+                return
+            }
+        """.trimIndent()
+
+        runProgram(program)
+    }
+
+    @Test(expected = ParserException::class)
+    fun testParserError7() {
+        val program = """
+            var x = +5
+        """.trimIndent()
+
+        runProgram(program)
+    }
+
 }

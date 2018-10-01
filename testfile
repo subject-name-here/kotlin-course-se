@@ -1,4 +1,2 @@
-fun mod(x, y) {
-    return x % y
-}
-println(mod(2, 0))
+var x = 2 ~ 2
+println(2)

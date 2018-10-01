@@ -79,6 +79,42 @@ class TestIntegrated {
     }
 
     @Test
+    fun test4() {
+        val program = """
+            fun foo(n) {
+                fun foo(m) {
+                    return m + n
+                }
+
+                return foo(2)
+            }
+
+            println(foo(4))
+        """.trimIndent()
+
+        val expected = "6"
+
+        assertEquals(expected, runProgram(program))
+    }
+
+    @Test
+    fun test5() {
+        val program = """
+            var x = 2
+            fun foo(n) {
+                return n * x
+            }
+
+            println(foo(4))
+        """.trimIndent()
+
+        val expected = "8"
+
+        assertEquals(expected, runProgram(program))
+    }
+
+
+    @Test
     fun testPrintln1() {
         val program = "println(22229)"
 
@@ -499,6 +535,7 @@ class TestIntegrated {
 
         assertEquals(expected, runProgram(program))
     }
+
     @Test
     fun testExpression5() {
         val program = """
@@ -508,6 +545,18 @@ class TestIntegrated {
         """.trimIndent()
 
         val expected = "16"
+
+        assertEquals(expected, runProgram(program))
+    }
+
+    @Test
+    fun testExpression6() {
+        val program = """
+            var x = -5
+            println(x)
+        """.trimIndent()
+
+        val expected = "-5"
 
         assertEquals(expected, runProgram(program))
     }
