@@ -52,7 +52,7 @@ class MyTreeVisitor(private val outStream: PrintStream) : ExpBaseVisitor<Void>()
             ctx.ifExpr() != null -> return visitIfExpr(ctx.ifExpr(), scope)
             ctx.returnExpr() != null -> return visitReturnExpr(ctx.returnExpr(), scope)
             ctx.variable() != null -> visitVariable(ctx.variable(), scope)
-            ctx.whileExpr() != null -> visitWhileExpr(ctx.whileExpr(), scope)
+            ctx.whileExpr() != null -> return visitWhileExpr(ctx.whileExpr(), scope)
         }
 
         return null
@@ -69,7 +69,7 @@ class MyTreeVisitor(private val outStream: PrintStream) : ExpBaseVisitor<Void>()
         val body = ctx.blockWithBraces()
         val lambda = { args: List<ExpParser.ExpressionContext>, outerScope: Scope ->
             if (args.size != parameters.size) {
-                throw MyTreeVisitorException("Line " + ctx.Identifier().symbol.line + ": not enough parameters.")
+                throw MyTreeVisitorException("Line " + ctx.Identifier().symbol.line + ": number of parameters differs.")
             }
 
             val innerScope = Scope(outerScope)
@@ -156,9 +156,9 @@ class MyTreeVisitor(private val outStream: PrintStream) : ExpBaseVisitor<Void>()
             "-" -> left - right
             "*" -> left * right
             "/" -> if (right != 0) left / right
-                else throw MyTreeVisitorException("Line"  + ctx.op.line + ": divide by zero.")
+                else throw MyTreeVisitorException("Line "  + ctx.op.line + ": divide by zero.")
             "%" -> if (right != 0) left % right
-                else throw MyTreeVisitorException("Line"  + ctx.op.line + ": divide by zero.")
+                else throw MyTreeVisitorException("Line "  + ctx.op.line + ": divide by zero.")
 
             else -> throw MyTreeVisitorException("Line " + ctx.op.line + ": operation unknown error.")
         }
