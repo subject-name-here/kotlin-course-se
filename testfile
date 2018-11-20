@@ -1,2 +1,2 @@
-var x = 2 ~ 2
+var x = 2 + 2
 println(2)

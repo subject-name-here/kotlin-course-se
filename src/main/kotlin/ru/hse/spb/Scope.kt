@@ -7,7 +7,7 @@ class Scope(private val parentScope: Scope?) {
     private val funcScope = HashMap<String, Func>()
 
     fun addFunction(name: String, f: Func): Boolean {
-        return if (funcScope.containsKey(name)) {
+        return if (name in funcScope) {
             false
         } else {
             funcScope[name] = f
@@ -16,7 +16,7 @@ class Scope(private val parentScope: Scope?) {
     }
 
     fun getFunction(name: String): Func? {
-        return if (funcScope.contains(name)) {
+        return if (name in funcScope) {
             funcScope[name]
         } else {
             parentScope?.getFunction(name)
@@ -24,7 +24,7 @@ class Scope(private val parentScope: Scope?) {
     }
 
     fun addVariable(name: String, x: Int?): Boolean {
-        return if (varScope.containsKey(name)) {
+        return if (name in varScope) {
             false
         } else {
             varScope[name] = x
@@ -33,7 +33,7 @@ class Scope(private val parentScope: Scope?) {
     }
 
     fun setVariable(name: String, x: Int?): Boolean {
-        return if (varScope.containsKey(name)) {
+        return if (name in varScope) {
             varScope[name] = x
             true
         } else {
@@ -42,7 +42,7 @@ class Scope(private val parentScope: Scope?) {
     }
 
     fun getVariable(name: String): Int? {
-        return if (varScope.contains(name)) {
+        return if (name in varScope) {
             varScope[name]
         } else {
             parentScope?.getVariable(name)

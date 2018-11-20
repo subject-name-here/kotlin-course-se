@@ -14,11 +14,8 @@ class MyTreeVisitor(private val outStream: PrintStream) : ExpBaseVisitor<Void>()
         val main = ctx?.block()
         val scope = Scope(null)
         scope.addFunction("println", Func { args: List<ExpParser.ExpressionContext>, outerScope: Scope ->
-            val list = ArrayList<Int>()
-            for (arg in args) {
-                list.add(visitExpression(arg, outerScope))
-            }
-            outStream.println(list.asSequence().joinToString(" "))
+            val list = args.map { visitExpression(it, outerScope) }
+            outStream.println(list.joinToString(" "))
 
             null
         })
@@ -60,11 +57,7 @@ class MyTreeVisitor(private val outStream: PrintStream) : ExpBaseVisitor<Void>()
 
     private fun visitFunction(ctx: ExpParser.FunctionContext, scope: Scope) {
         val name = ctx.Identifier().text
-
-        val parameters = ArrayList<String>()
-        for (x in ctx.parameterNames().Identifier()) {
-            parameters.add(x.text)
-        }
+        val parameters = ctx.parameterNames().Identifier().map { it.text }
 
         val body = ctx.blockWithBraces()
         val lambda = { args: List<ExpParser.ExpressionContext>, outerScope: Scope ->
@@ -112,7 +105,7 @@ class MyTreeVisitor(private val outStream: PrintStream) : ExpBaseVisitor<Void>()
 
     private fun visitWhileExpr(ctx: ExpParser.WhileExprContext, scope: Scope): Int? {
         val cond = ctx.expression()
-        while (visitExpression(cond, scope)!= 0) {
+        while (visitExpression(cond, scope) != 0) {
             val res = visitBlockWithBraces(ctx.blockWithBraces(), scope)
             if (res != null)
                 return res
@@ -165,23 +158,15 @@ class MyTreeVisitor(private val outStream: PrintStream) : ExpBaseVisitor<Void>()
     }
 
     private fun visitAtomExpression(ctx: ExpParser.AtomExpressionContext, scope: Scope): Int {
-        if (ctx.Identifier() != null) {
-            val name = ctx.Identifier().text
-            val value = scope.getVariable(name)
-
-            if (value != null) {
-                return value
-            } else {
-                throw MyTreeVisitorException("Line " + ctx.Identifier().symbol.line + ": variable is not defined.")
+        return when {
+            ctx.Identifier() != null -> {
+                val name = ctx.Identifier().text
+                scope.getVariable(name) ?: throw MyTreeVisitorException("Line " + ctx.Identifier().symbol.line + ": variable is not defined.")
             }
-        } else if (ctx.expression() != null) {
-            return visitExpression(ctx.expression(), scope)
-        } else if (ctx.functionCall() != null) {
-            return visitFunctionCall(ctx.functionCall(), scope)
-        } else if (ctx.Literal() != null) {
-            return ctx.Literal().text.toInt()
-        } else {
-            throw MyTreeVisitorException("Line " + ctx.start.line + ": unknown atom expression.")
+            ctx.expression() != null -> visitExpression(ctx.expression(), scope)
+            ctx.functionCall() != null -> visitFunctionCall(ctx.functionCall(), scope)
+            ctx.Literal() != null -> ctx.Literal().text.toInt()
+            else -> throw MyTreeVisitorException("Line " + ctx.start.line + ": unknown atom expression.")
         }
     }
 }
