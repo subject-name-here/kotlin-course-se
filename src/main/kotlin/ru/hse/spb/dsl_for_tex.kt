@@ -17,11 +17,7 @@ infix fun String.to(value: String): String {
 abstract class Element {
     abstract fun render(builder: StringBuilder)
 
-    override fun toString(): String {
-        val stringBuilder = StringBuilder()
-        render(stringBuilder)
-        return stringBuilder.toString()
-    }
+    override fun toString(): String = buildString { render(this@buildString) }
 
     fun toOutputStream(out: OutputStream) {
         out.write(toString().toByteArray())
@@ -58,17 +54,17 @@ abstract class Tag(val name: String, vararg val parameters: String) : Element() 
     }
 
     operator fun String.unaryPlus() {
-        children.add(TextElement(this))
+        children += TextElement(this)
     }
 
     protected fun <T : Element> initTag(tag: T, init: T.() -> Unit): T {
         tag.init()
-        children.add(tag)
+        children += tag
         return tag
     }
 
     fun math(formulas: String) {
-        children.add(Math(formulas))
+        children += Math(formulas)
     }
 
     fun customTag(name: String, vararg parameters: String, init: CustomTag.() -> Unit) = initTag(CustomTag(name, *parameters), init)
@@ -111,8 +107,12 @@ class Item(vararg parameters: String) : Tag("item", *parameters) {
 class Document(vararg parameters: String) : Tag("document", *parameters) {
     private val headers = arrayListOf<Element>()
 
-    fun usePackage(argument: String, vararg parameters: String) = headers.add(UsePackage(argument, *parameters))
-    fun documentClass(argument: String, vararg parameters: String) = headers.add(DocumentClass(argument, *parameters))
+    fun usePackage(argument: String, vararg parameters: String) {
+        headers += UsePackage(argument, *parameters)
+    }
+    fun documentClass(argument: String, vararg parameters: String) {
+        headers += DocumentClass(argument, *parameters)
+    }
 
     override fun render(builder: StringBuilder) {
         headers.forEach { it.render(builder) }
@@ -120,9 +120,4 @@ class Document(vararg parameters: String) : Tag("document", *parameters) {
     }
 }
 
-fun document(vararg parameters: String, init: Document.() -> Unit): Document {
-    val document = Document(*parameters)
-    document.init()
-    return document
-}
-
+fun document(vararg parameters: String, init: Document.() -> Unit) = Document(*parameters).apply(init)
