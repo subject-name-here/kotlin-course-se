@@ -7,7 +7,7 @@ import java.lang.StringBuilder
 annotation class TexElementMarker
 
 fun renderParameters(vararg parameters: String): String {
-    return if (parameters.isEmpty()) "" else "[${parameters.joinToString(", ")}]"
+    return if (parameters.isEmpty()) "" else parameters.joinToString(", ", "[", "]")
 }
 
 infix fun String.to(value: String): String {
